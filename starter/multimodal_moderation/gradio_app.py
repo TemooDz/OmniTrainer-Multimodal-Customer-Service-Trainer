@@ -255,8 +255,9 @@ class ChatSessionWithTracing:
                         feedback = f"⚠️ Content flagged: {safety_message}"
                         response = "[This content was flagged by moderation and not sent to the AI. Please try again.]"
 
-                        span.set_attribute("feedback", feedback)
-
+                        with tracer.start_as_current_span("feedback") as feedback_span:
+                            feedback_span.set_attribute("feedback.content", feedback)
+                            feedback_span.set_attribute("feedback.flagged", True)
                         return response, past_messages, feedback
 
                     # Content safe - add to prompt
@@ -279,6 +280,9 @@ class ChatSessionWithTracing:
                                     "[This content was flagged by moderation and not sent to the AI. Please try again.]"
                                 )
 
+                                with tracer.start_as_current_span("feedback") as feedback_span:
+                                    feedback_span.set_attribute("feedback.content", feedback)
+                                    feedback_span.set_attribute("feedback.flagged", True)
                                 return response, past_messages, feedback
 
                             # Content safe - read file and add to prompt
